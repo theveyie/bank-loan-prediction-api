@@ -75,7 +75,7 @@ print('Test Accuracy:', round(acc, 3))
 
 @app.get("/")
 def root():
-    return {"message": "Bankloan Default Prediction API", "version": "1.2", "Accuracy": round(acc, 3)}
+    return {"message": "Bankloan Default Prediction API", "version": "1.2a", "Accuracy": round(acc, 3)}
 
 @app.post("/predict")
 def predict(input_data: LoanInput):
