@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 import numpy as np
 import pandas as pd
@@ -23,21 +24,13 @@ warnings.filterwarnings('ignore')
 
 app = FastAPI(title="Bank Loan Response Prediction API", version="1.0")
 
-def predict_default_probability(input_data):
-    # Preprocess the input data
-    input_df = pd.DataFrame([input_data])
-    
-    # Ensure the input features match the training features
-    input_df = input_df[X.columns]
-    
-    # Standardize the input data
-    scaler = StandardScaler()
-    input_scaled = scaler.fit_transform(input_df)
-    
-    # Predict the probability of default
-    probability = rf_model.predict_proba(input_scaled)[:, 1][0]
-    
-    return probability
+class LoanInput(BaseModel):
+    AGE: float
+    EMPLOY: float
+    ADDRESS: float
+    DEBTINC: float
+    CREDDEBT: float
+    OTHDEBT: float
 
 # ---------------------------------------------------------------------------
 # Load data and train model once at startup
@@ -46,12 +39,14 @@ df = pd.read_csv("BANK LOAN.csv")
 
 print(df.head())
 
-y   = df['DEFAULTER']
+y = df['DEFAULTER']
 X = df.drop(['DEFAULTER', 'SN'], axis=1)
-
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled  = scaler.transform(X_test)
 
 rf_model = RandomForestClassifier(
     n_estimators=500,
@@ -60,13 +55,11 @@ rf_model = RandomForestClassifier(
     n_jobs=-1
 )
 
-rf_model.fit(X_train, y_train)
+rf_model.fit(X_train_scaled, y_train)
 
 print('OOB Score (baseline RF):', round(rf_model.oob_score_, 3))
 
-
-
-y_pred = rf_model.predict(X_test)
+y_pred = rf_model.predict(X_test_scaled)
 
 cm = confusion_matrix(y_test, y_pred)
 acc = accuracy_score(y_test, y_pred)
@@ -76,16 +69,17 @@ print('\nClassification Report:\n')
 print(classification_report(y_test, y_pred, digits=3))
 print('Test Accuracy:', round(acc, 3))
 
-print('OOB Score (baseline RF):', round(rf_model.oob_score_, 3))
-
 #--------------------------------
 #
 #--------------------------------
 
 @app.get("/")
 def root():
-    return {"message": "Bankloan Default Prediction API", "version": "1.0"}
+    return {"message": "Bankloan Default Prediction API", "version": "1.0", "Accuracy": round(acc, 3)}
 
-@app.get("/predict")
-def predict_default_probability(input_data: dict):
-    return {"Default probability ": prediction}
+@app.post("/predict")
+def predict(input_data: LoanInput):
+    input_df = pd.DataFrame([input_data.model_dump()])
+    input_scaled = scaler.transform(input_df)
+    probability = rf_model.predict_proba(input_scaled)[:, 1][0]
+    return {"default_probability": round(float(probability), 4)}
