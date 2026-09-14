@@ -87,5 +87,5 @@ def root():
     return {"message": "Bankloan Default Prediction API", "version": "1.0"}
 
 @app.get("/predict")
-def predict_default():
+def predict_default_probability(input_data: dict):
     return {"Default probability ": prediction}
