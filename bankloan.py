@@ -22,7 +22,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-app = FastAPI(title="Bank Loan Response Prediction API", version="1.0")
+app = FastAPI(title="Bank Loan Response Prediction API", version="1.1")
 
 class LoanInput(BaseModel):
     AGE: float
@@ -75,7 +75,7 @@ print('Test Accuracy:', round(acc, 3))
 
 @app.get("/")
 def root():
-    return {"message": "Bankloan Default Prediction API", "version": "1.0", "Accuracy": round(acc, 3)}
+    return {"message": "Bankloan Default Prediction API", "version": "1.2", "Accuracy": round(acc, 3)}
 
 @app.post("/predict")
 def predict(input_data: LoanInput):
